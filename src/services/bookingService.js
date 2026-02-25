@@ -1,23 +1,6 @@
-/**
- * Booking Service
- * 
- * Handles all database operations for bookings.
- * 
- * Booking lifecycle: PENDING_PAYMENT → CONFIRMED | EXPIRED → CANCELLED
- * 
- * Key points:
- * - idempotency_key is UNIQUE — prevents duplicate webhook processing
- * - expires_at is set to NOW() + 15 minutes on creation
- * - state transitions are validated before execution
- */
-
 const { query } = require('../db/pool');
 
 const BookingService = {
-  /**
-   * Create a new booking within a transaction.
-   * Called after seats have been successfully decremented.
-   */
   async create(client, data) {
     const {
       trip_id, user_id, num_seats, price_at_booking,
@@ -35,9 +18,6 @@ const BookingService = {
     return result.rows[0];
   },
 
-  /**
-   * Get booking by ID.
-   */
   async getById(bookingId) {
     const result = await query(
       `SELECT b.*, t.title as trip_title, t.start_date as trip_start_date,
@@ -50,9 +30,6 @@ const BookingService = {
     return result.rows[0] || null;
   },
 
-  /**
-   * Get booking by ID with row lock (FOR UPDATE) within a transaction.
-   */
   async getByIdForUpdate(client, bookingId) {
     const result = await client.query(
       `SELECT b.*, t.title as trip_title, t.start_date as trip_start_date,
@@ -66,9 +43,6 @@ const BookingService = {
     return result.rows[0] || null;
   },
 
-  /**
-   * Find booking by idempotency_key (for webhook deduplication).
-   */
   async getByIdempotencyKey(idempotencyKey) {
     const result = await query(
       `SELECT * FROM bookings WHERE idempotency_key = $1`,
@@ -77,9 +51,6 @@ const BookingService = {
     return result.rows[0] || null;
   },
 
-  /**
-   * Update booking state to CONFIRMED (after successful payment webhook).
-   */
   async confirmBooking(client, bookingId, paymentReference) {
     const result = await client.query(
       `UPDATE bookings
@@ -91,9 +62,6 @@ const BookingService = {
     return result.rows[0] || null;
   },
 
-  /**
-   * Update booking state to EXPIRED.
-   */
   async expireBooking(client, bookingId) {
     const result = await client.query(
       `UPDATE bookings
@@ -105,9 +73,6 @@ const BookingService = {
     return result.rows[0] || null;
   },
 
-  /**
-   * Cancel booking and set refund amount.
-   */
   async cancelBooking(client, bookingId, refundAmount) {
     const result = await client.query(
       `UPDATE bookings
@@ -121,10 +86,6 @@ const BookingService = {
     return result.rows[0] || null;
   },
 
-  /**
-   * Find all expired PENDING_PAYMENT bookings (for auto-expiry job).
-   * Returns bookings where expires_at < NOW() and state is still PENDING_PAYMENT.
-   */
   async findExpiredPending() {
     const result = await query(
       `SELECT id, trip_id, num_seats
@@ -135,9 +96,6 @@ const BookingService = {
     return result.rows;
   },
 
-  /**
-   * Get all bookings for a trip (for admin metrics).
-   */
   async getByTripId(tripId) {
     const result = await query(
       `SELECT * FROM bookings WHERE trip_id = $1 ORDER BY created_at DESC`,
@@ -146,10 +104,6 @@ const BookingService = {
     return result.rows;
   },
 
-  /**
-   * Get aggregated booking stats for a trip (for admin metrics).
-   * Single query instead of fetching all rows and aggregating in JS.
-   */
   async getTripBookingStats(tripId) {
     const result = await query(
       `SELECT

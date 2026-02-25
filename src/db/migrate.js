@@ -1,16 +1,3 @@
-/**
- * Database Migration Script
- * 
- * Creates the trips and bookings tables with all required fields,
- * indexes, and constraints as defined in the data model.
- * 
- * Key design decisions:
- * - available_seats is denormalized on trips for fast reads and atomic locking
- * - bookings.idempotency_key is UNIQUE to guarantee webhook deduplication
- * - CHECK constraints enforce valid state transitions at the DB level
- * - Indexes on frequently queried columns (state, trip_id, expires_at)
- */
-
 require('dotenv').config();
 const { pool } = require('./pool');
 
