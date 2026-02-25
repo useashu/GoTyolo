@@ -62,8 +62,10 @@ router.post('/:bookingId/cancel', async (req, res, next) => {
       return res.status(409).json({ error: 'Booking could not be cancelled' });
     }
 
-    // Release seats back
-    await TripService.incrementSeats(client, booking.trip_id, booking.num_seats);
+    // Only release seats if before cutoff; after cutoff trip is imminent, seats stay reserved
+    if (isBeforeCutoff) {
+      await TripService.incrementSeats(client, booking.trip_id, booking.num_seats);
+    }
 
     await client.query('COMMIT');
 

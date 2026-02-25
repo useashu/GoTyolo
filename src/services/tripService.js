@@ -49,10 +49,10 @@ const TripService = {
         (title, destination, start_date, end_date, price,
          max_capacity, available_seats, status,
          refundable_until_days_before, cancellation_fee_percent)
-       VALUES ($1,$2,$3,$4,$5,$6,$6,$7,$8,$9)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        RETURNING *`,
       [title, destination, start_date, end_date, price,
-       max_capacity, status,
+       max_capacity, max_capacity, status,
        refundable_until_days_before, cancellation_fee_percent]
     );
     return result.rows[0];
